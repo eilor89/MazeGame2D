@@ -22,6 +22,8 @@ This project generates a maze using a 2D array and allows the user to navigate t
 
 ## Contributors
 - **Elvis Ilor**: Core development, project management, and implementation.
+ -** Preslee Henry**: Handles player movement and position within the maze.
+  -**Albrechtsen, Austin**: Generates a 2D maze with walls, paths, start, and target positions.
 
 ## Acknowledgments
 - Java Swing for GUI components.
