@@ -1,0 +1,194 @@
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import java.util.Random;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+// MazeGenerator.java
+class MazeGenerator {
+    private final int rows;
+    private final int cols;
+    private final int[][] maze;
+
+    public MazeGenerator(int rows, int cols) {
+        this.rows = rows;
+        this.cols = cols;
+        this.maze = new int[rows][cols];
+        generateMaze();
+    }
+
+    private void generateMaze() {
+        Random rand = new Random();
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                maze[i][j] = rand.nextInt(2); // 0 for path, 1 for wall
+            }
+        }
+        maze[0][0] = 0; // Start position
+        maze[rows / 2][cols / 2] = 0; // Center position
+    }
+
+    public int[][] getMaze() {
+        return maze;
+    }
+
+    public int[] getCenter() {
+        return new int[]{rows / 2, cols / 2};
+    }
+}
+
+// Player.java
+class Player {
+    private int x;
+    private int y;
+    private int moves;
+    private boolean invalidMove;
+
+    public Player() {
+        this.x = 0; // Start position x
+        this.y = 0; // Start position y
+        this.moves = 0;
+        this.invalidMove = false;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getMoves() {
+        return moves;
+    }
+
+    public boolean isInvalidMove() {
+        return invalidMove;
+    }
+
+    public void move(int dx, int dy, int[][] maze) {
+        int newX = x + dx;
+        int newY = y + dy;
+        if (newX >= 0 && newY >= 0 && newX < maze.length && newY < maze[0].length && maze[newX][newY] == 0) {
+            x = newX;
+            y = newY;
+            moves++;
+            invalidMove = false;
+        } else {
+            invalidMove = true;
+        }
+    }
+
+    public boolean hasWon(int centerX, int centerY) {
+        return x == centerX && y == centerY;
+    }
+}
+
+// ScoreBoard.java
+class ScoreBoard {
+    private final List<Integer> scores = new ArrayList<>();
+
+    public void addScore(Player player) {
+        scores.add(player.getMoves());
+        Collections.sort(scores);
+    }
+
+    public void printScores() {
+        System.out.println("Scoreboard:");
+        for (int i = 0; i < scores.size(); i++) {
+            System.out.println((i + 1) + ". " + scores.get(i) + " moves");
+        }
+    }
+}
+
+// MazeGameGUI.java
+public class MazeGameGUI extends JFrame {
+    private final MazeGenerator mazeGenerator;
+    private Player player;
+    private final int[][] maze;
+    private final int cellSize = 30;
+    private final int[] center;
+    private final ScoreBoard scoreBoard;
+
+    public MazeGameGUI(int rows, int cols) {
+        this.mazeGenerator = new MazeGenerator(rows, cols);
+        this.player = new Player();
+        this.maze = mazeGenerator.getMaze();
+        this.center = mazeGenerator.getCenter();
+        this.scoreBoard = new ScoreBoard();
+        initUI();
+    }
+
+    private void initUI() {
+        setTitle("Maze Game");
+        setSize(maze[0].length * cellSize, maze.length * cellSize);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int key = e.getKeyCode();
+                switch (key) {
+                    case KeyEvent.VK_UP -> player.move(-1, 0, maze);
+                    case KeyEvent.VK_DOWN -> player.move(1, 0, maze);
+                    case KeyEvent.VK_LEFT -> player.move(0, -1, maze);
+                    case KeyEvent.VK_RIGHT -> player.move(0, 1, maze);
+                }
+                repaint();
+
+                if (player.isInvalidMove()) {
+                    JOptionPane.showMessageDialog(null, "Invalid Move! Try a different direction.");
+                }
+
+                if (player.hasWon(center[0], center[1])) {
+                    scoreBoard.addScore(player);
+                    scoreBoard.printScores();
+                    resetGame();
+                }
+            }
+        });
+    }
+
+    private void resetGame() {
+        // Reset player position and moves
+        player = new Player();
+        mazeGenerator.generateMaze();
+        repaint();
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        for (int i = 0; i < maze.length; i++) {
+            for (int j = 0; j < maze[0].length; j++) {
+                if (maze[i][j] == 1) {
+                    g.setColor(Color.BLACK);
+                } else {
+                    g.setColor(Color.WHITE);
+                }
+                g.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                g.setColor(Color.GRAY);
+                g.drawRect(j * cellSize, i * cellSize, cellSize, cellSize);
+            }
+        }
+
+        // Draw player
+        g.setColor(Color.BLUE);
+        g.fillOval(player.getY() * cellSize, player.getX() * cellSize, cellSize, cellSize);
+
+        // Draw center
+        g.setColor(Color.GREEN);
+        g.fillRect(center[1] * cellSize, center[0] * cellSize, cellSize, cellSize);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            MazeGameGUI game = new MazeGameGUI(10, 10);
+            game.setVisible(true);
+        });
+    }
+}
